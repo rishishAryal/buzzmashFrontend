@@ -7,7 +7,8 @@ const feed = () => {
   const { category } = fetchCategory();
 
   const [token, setToken] = useState("");
-
+  const [isLoginMessage, setIsLoginMessage] = useState("");
+  const [blogId, setBlogId] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -22,14 +23,56 @@ const feed = () => {
     }));
   };
 
-  const handleSubmit =  (e) => {
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      setToken(token);
+      console.log(token);
+    }
+  }, []);
+
+  const setBlogid = (id) => {
+    setBlogId(id);
+    if (blogId === id) {
+      like();
+    }
+  };
+
+  const like = async () => {
+    if (!token) {
+      setTimeout(() => {
+        window.location.href = "/auth/login";
+      }, 1000);
+      return;
+    }
+
+    const response = fetch("https://buzzmash.onrender.com/api/v1/blog/like", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        blogId: blogId,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data);
+        console.log(blogId);
+      });
+  };
+
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     try {
-      const token = localStorage.getItem("token");
-      if (token) {
-        setToken(token);
-        console.log(token);
+      if (!token) {
+        setIsLoginMessage("Please login to create blog");
+        setTimeout(() => {
+          setIsLoginMessage("");
+        }, 3000);
+        return;
       }
       const data = fetch(
         "https://buzzmash.onrender.com/api/v1/blog/create-blog",
@@ -49,6 +92,9 @@ const feed = () => {
         .then((response) => response.json())
         .then((data) => {
           console.log(data);
+          if (data.success) {
+            window.location.reload();
+          }
         });
     } catch (err) {
       console.error(err.message);
@@ -91,6 +137,7 @@ const feed = () => {
                   type="text"
                   placeholder="Enter title"
                   name="title"
+                  required
                   value={formData.title}
                   onChange={handleChange}
                 />
@@ -107,6 +154,7 @@ const feed = () => {
                   id="description"
                   placeholder="Enter description"
                   rows="4"
+                  required
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
@@ -125,6 +173,7 @@ const feed = () => {
                   type="text"
                   placeholder="Enter category"
                   name="blogCategory"
+                  required
                   value={formData.blogCategory}
                   onChange={handleChange}
                 />
@@ -152,6 +201,7 @@ const feed = () => {
                 >
                   Submit
                 </button>
+                <p className="text-red-500">{isLoginMessage}</p>
               </div>
             </form>
           </div>
@@ -159,32 +209,41 @@ const feed = () => {
         {/* feed start here */}
         <hr></hr>
         <h1 className="text-4xl m-[50px]"> Blog Feed</h1>
-
-        {blogFeed.map((blog) => (
-          <div className="w-[500px] p-[20px] rounded-sm border mx-auto mt-4">
-            <div className="">
-              <p className="text-sm text-left ">By : {blog.author}</p>
-              <div className="flex justify-between items-center">
-                <h1 className="text-2xl text-left font-semibold ">
-                  {blog.title}
-                </h1>
-
-                <p className="p-1 bg-blue-200 rounded">{blog.category}</p>
-              </div>
-
-              <p className="text-justify">
-                {blog.description.length > 150
-                  ? blog.description.substring(0, 150) + "...."
-                  : ""}
-              </p>
-              <hr className="mt-4"></hr>
-              <div className="flex justify-between items-center">
-                <p>Like {blog.likeCount}</p>
-                <p>Comment {blog.commentCount}</p>
+        {/* sort in ascending order */}
+        {blogFeed
+          .sort((a, b) => {
+            // Assuming 'createdAt' is a Date object. If it's a string, convert it to Date as:
+            // new Date(b.createdAt) - new Date(a.createdAt)
+            return new Date(b.createdAt) - new Date(a.createdAt);
+          })
+          .map((blog) => (
+            <div className="w-[500px] p-[20px] rounded-sm border mx-auto mt-4">
+              <div className="">
+                <p className="text-sm text-left">By : {blog.author}</p>
+                <div className="flex justify-between items-center">
+                  <h1 className="text-2xl text-left font-semibold">
+                    {blog.title}
+                  </h1>
+                  <p className="p-1 bg-blue-200 rounded">{blog.category}</p>
+                </div>
+                <p className="text-justify">
+                  {blog.description.length > 150
+                    ? blog.description.substring(0, 150) + "...."
+                    : blog.description}
+                </p>
+                <hr className="mt-4"></hr>
+                <div className="flex justify-between items-center">
+                  <p
+                    onClick={() => setBlogid(blog._id)}
+                    className="cursor-pointer"
+                  >
+                    Like {blog.likeCount}
+                  </p>
+                  <p>Comment {blog.commentCount}</p>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
 
         {/* <div className="w-[400px] p-[20px] rounded-sm border mx-auto mt-4">
           <div>
