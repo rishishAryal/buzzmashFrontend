@@ -240,7 +240,9 @@ const profile = () => {
               <div>
                 <h1 className="text-center text-4xl">Profile Details</h1>
                 <div>
-                  {isLoading && <p></p>}
+                  {isLoading && (
+                    <p className="text-4xl text-center">Loading...</p>
+                  )}
                   {!isLoading && (
                     <>
                       <div className=" w-[400px] mx-auto p-5  bg-blue-100 rounded ">
@@ -323,9 +325,10 @@ const profile = () => {
                   </div>
                 </div>
               )}
-
+              {isDashboardLoading && (
+                <p className="text-4xl text-center">Loading...</p>
+              )}
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4">
-                {isDashboardLoading && <p>Loading...</p>}
                 {/* {dashboardData.} */}
 
                 {!isDashboardLoading &&
@@ -341,6 +344,15 @@ const profile = () => {
                         >
                           {" "}
                           {/* Ensure you have a unique key */}
+                          {blog.thumbnail && (
+                            <div className="flex justify-center items-center my-1">
+                              <img
+                                src={blog.thumbnail}
+                                alt="thumbnail"
+                                className="w-[full] h-[300px]  "
+                              />
+                            </div>
+                          )}
                           <span className="text-sm text-left">
                             By : {blog.author}
                           </span>
@@ -367,9 +379,16 @@ const profile = () => {
                               >
                                 Delete
                               </p>
-                              <p className="text-white bg-green-500 p-1 rounded-lg mt-1">
-                                Edit
-                              </p>
+                              <Link
+                                href={{
+                                  pathname: "/blogs/edit",
+                                  query: { slug: blog.slug },
+                                }}
+                              >
+                                <p className="text-white bg-green-500 p-1 rounded-lg mt-1">
+                                  Edit
+                                </p>
+                              </Link>
                             </div>
                           </div>
                         </div>
