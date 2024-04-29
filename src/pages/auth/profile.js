@@ -9,7 +9,11 @@ const profile = () => {
   const [isEditProfile, setIsEditProfile] = useState(false);
   const [profileData, setProfileData] = useState({});
   const [isLoading, setIsLoading] = useState(true);
-
+  const [internetError, setInternetError] = useState("");
+  const [isDashboardLoading, setIsDashboardLoading] = useState(false);
+  const [dashboardData, setDashboardData] = useState([]);
+  const [showAlert, setShowAlert] = useState(false);
+  const [blogID, setBlogID] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     username: "",
@@ -62,6 +66,62 @@ const profile = () => {
       });
   };
 
+  const deleteBlog = async () => {
+    if (blogID) {
+      const response = fetch(
+        `https://buzzmash.onrender.com/api/v1/blog/delete/${blogID}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            console.log("Blog Deleted");
+            setShowAlert(false);
+            handleDashboard();
+          }
+        });
+    }
+  };
+
+  const handleDashboard = () => {
+    setIsDashboardLoading(true);
+
+    try {
+      const response = fetch(
+        "https://buzzmash.onrender.com/api/v1/blog/getUserBlogs",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          console.log(data);
+          if (data.success) {
+            // console.log(data.blogs);
+            setDashboardData(data.blogs);
+            // setIsDashboardLoading(false);
+            if (dashboardData) {
+              setIsDashboardLoading(false);
+              console.log(dashboardData);
+            }
+            console.log(dashboardData);
+          }
+        });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevState) => ({
@@ -70,6 +130,10 @@ const profile = () => {
     }));
   };
 
+  const showDeleteAlert = (id = "") => {
+    setBlogID(id);
+    setShowAlert(!showAlert);
+  };
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
@@ -91,6 +155,14 @@ const profile = () => {
   }, [token]); // Dependency array includes token
 
   const fetchProfile = async () => {
+    const isInternetConnected = window.navigator.onLine;
+    if (!isInternetConnected) {
+      setInternetError("Please check your internet connection");
+      return;
+    } else {
+      setInternetError("");
+    }
+
     setIsLoading(true);
     console.log("fetching profile");
     const response = await fetch(
@@ -106,8 +178,10 @@ const profile = () => {
 
     const data = await response.json();
     console.log(data);
-    setProfileData(data);
-    if (data) {
+
+    if (data.message === "Token is not valid") {
+    } else {
+      setProfileData(data);
       setIsLoading(false);
     }
   };
@@ -120,6 +194,7 @@ const profile = () => {
     setIsEditProfile(false);
   };
   const seletctDashboard = () => {
+    handleDashboard();
     console.log("dashboard");
     setIsDetails(false);
     setIsDashboard(true);
@@ -159,6 +234,7 @@ const profile = () => {
           </div>
         </div>
         <div className="w-full h-[100vw]">
+          {internetError && <p>{internetError}</p>}
           {isDetails && (
             <>
               <div>
@@ -222,7 +298,86 @@ const profile = () => {
               </div>
             </>
           )}
-          {isDashboard && <div>Dashboard</div>}
+          {isDashboard && (
+            <div>
+              <h1 className="text-4xl text-center"> My Dashboard</h1>
+              {showAlert && (
+                <div className="p-5 bg-blue-500 text-center absolute left-[600px] ease-in-out transition-all duration-75 top-[300px] w-[400px]">
+                  <p className="mx-auto text-white">
+                    Do you want to Delete this blog
+                  </p>
+
+                  <div className="flex justify-around items-center mt-5 ">
+                    <p
+                      className="bg-green-500 p-1 text-white cursor-pointer rounded"
+                      onClick={() => setShowAlert(false)}
+                    >
+                      NO
+                    </p>
+                    <p
+                      className="bg-red-500 p-1 cursor-pointer rounded text-white"
+                      onClick={() => deleteBlog()}
+                    >
+                      YES
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4">
+                {isDashboardLoading && <p>Loading...</p>}
+                {/* {dashboardData.} */}
+
+                {!isDashboardLoading &&
+                  dashboardData
+                    .sort(
+                      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+                    )
+                    .map((blog) => {
+                      return (
+                        <div
+                          key={blog.id}
+                          className="bg-blue-100 p-2 rounded-md shadow-lg"
+                        >
+                          {" "}
+                          {/* Ensure you have a unique key */}
+                          <span className="text-sm text-left">
+                            By : {blog.author}
+                          </span>
+                          <div className="flex justify-between items-center">
+                            <h1 className="text-2xl">{blog.title}</h1>
+                            <span className="p-1 bg-blue-200 rounded">
+                              {blog.category}
+                            </span>
+                          </div>
+                          <p className="text-sm text-left">
+                            {blog.description.length > 150
+                              ? blog.description.substring(0, 150) + "...."
+                              : blog.description}
+                          </p>
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p>Likes {blog.likeCount}</p>
+                              <p>Comments {blog.commentCount}</p>
+                            </div>
+                            <div>
+                              <p
+                                className="text-white bg-red-500 p-1 cursor-pointer rounded-lg"
+                                onClick={() => showDeleteAlert(blog._id)}
+                              >
+                                Delete
+                              </p>
+                              <p className="text-white bg-green-500 p-1 rounded-lg mt-1">
+                                Edit
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+              </div>
+            </div>
+          )}
           {isEditProfile && (
             <>
               <div class="max-w-lg mx-auto p-5">

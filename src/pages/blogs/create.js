@@ -10,6 +10,7 @@ const create = () => {
   });
   const [isLoginMessage, setIsLoginMessage] = useState("");
   const [token, setToken] = useState("");
+  const [showAlert, setShowAlert] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -61,6 +62,17 @@ const create = () => {
         .then((response) => response.json())
         .then((data) => {
           console.log(data);
+          if (data.success) {
+            setShowAlert(true);
+            setFormData({
+              title: "",
+              description: "",
+              blogCategory: "",
+            });
+            setTimeout(() => {
+              setShowAlert(false);
+            }, 1000);
+          }
         });
     } catch (err) {
       console.error(err.message);
@@ -72,6 +84,12 @@ const create = () => {
     <div>
       <div className="w-full flex items-center justify-center">
         <div className="w-full max-w-lg">
+          {showAlert && (
+            <div className="p-5 bg-blue-500 text-center absolute left-[600px] ease-in-out transition-all duration-75 top-[300px] w-[400px]">
+              <p className="mx-auto text-white">Blog Created Successfully!</p>
+            </div>
+          )}
+
           <form className=" px-8 pt-6 pb-8 mb-4" onSubmit={handleSubmit}>
             <div className="mb-4">
               <label
