@@ -172,6 +172,7 @@ const profile = () => {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          noCORS: true,
         },
       }
     );

@@ -9,11 +9,18 @@ const feed = () => {
   const [token, setToken] = useState("");
   const [isLoginMessage, setIsLoginMessage] = useState("");
   const [blogId, setBlogId] = useState("");
+  const [blogIdofLike, setblogIdofLike] = useState("");
+  const [isLikePressed, setIsLikePressed] = useState(false);
+  const [isCommentLoading, setIsCommentLoading] = useState(false);
+  const [commentData, setCommentData] = useState([]);
+  const [commentText, setCommentText] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     blogCategory: "",
   });
+
+  const [openComment, setOpenComment] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -31,12 +38,15 @@ const feed = () => {
     }
   }, []);
 
-  const setBlogid = (id) => {
-    setBlogId(id);
-    if (blogId === id) {
+  const likeBlogId = (id) => {
+    setblogIdofLike(id);
+  };
+
+  useEffect(() => {
+    if (blogIdofLike) {
       like();
     }
-  };
+  }, [blogIdofLike]);
 
   const like = async () => {
     if (!token) {
@@ -53,12 +63,15 @@ const feed = () => {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        blogId: blogId,
+        blogId: blogIdofLike,
       }),
     })
       .then((response) => response.json())
       .then((data) => {
         console.log(data);
+        if (data.success) {
+          window.location.reload();
+        }
         console.log(blogId);
       });
   };
@@ -101,6 +114,87 @@ const feed = () => {
     }
   };
 
+  const submitComment = (e) => {
+    e.preventDefault();
+
+    if (!token) {
+      setIsLoginMessage("Please login to create blog");
+      setTimeout(() => {
+        setIsLoginMessage("");
+      }, 3000);
+      return;
+    }
+    console.log(commentText, blogId);
+    const data = fetch("https://buzzmash.onrender.com/api/v1/blog/comment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        blogId: blogId,
+        comment: commentText,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data);
+        if (data.success) {
+          fetchComment();
+          setCommentText("");
+        }
+      })
+      .catch((err) => {
+        console.error(err.message);
+      });
+  };
+
+  useEffect(() => {
+    if (blogId) {
+      fetchComment();
+    }
+  }, [blogId]); // This effect runs whenever blogId changes
+
+  const fetchComment = () => {
+    try {
+      setIsCommentLoading(true);
+      fetch(`https://buzzmash.onrender.com/api/v1/blog/getComments/${blogId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            console.log(data.comments);
+            setCommentData(data.comments);
+          }
+          if (commentData.length > 0) {
+            setIsCommentLoading(false);
+          }
+
+          setIsCommentLoading(false);
+        })
+        .catch((err) => {
+          console.log(err.message);
+        });
+    } catch (err) {
+      console.error(err);
+      setIsCommentLoading(false);
+    }
+  };
+
+  const setComment = (id) => {
+    setBlogId(id);
+    setOpenComment(true);
+  };
+  const unsetComment = () => {
+    setOpenComment(false);
+    setBlogId("");
+  };
+
   useEffect(() => {
     const response = fetch(
       "https://buzzmash.onrender.com/api/v1/blog/getBlogFeed",
@@ -115,6 +209,9 @@ const feed = () => {
       .then((data) => {
         setBlogFeed(data.blogs);
         console.log(data.blogs);
+      })
+      .catch((err) => {
+        console.log(err.message);
       });
   }, []);
 
@@ -210,6 +307,7 @@ const feed = () => {
         <hr></hr>
         <h1 className="text-4xl m-[50px]"> Blog Feed</h1>
         {/* sort in ascending order */}
+        <div></div>
         {blogFeed
           .sort((a, b) => {
             // Assuming 'createdAt' is a Date object. If it's a string, convert it to Date as:
@@ -244,14 +342,83 @@ const feed = () => {
                 <hr className="mt-4"></hr>
                 <div className="flex justify-between items-center">
                   <p
-                    onClick={() => setBlogid(blog._id)}
+                    onClick={() => likeBlogId(blog._id)}
                     className="cursor-pointer"
                   >
                     Like {blog.likeCount}
                   </p>
                   <p>Comment {blog.commentCount}</p>
                 </div>
+
+                <div
+                  onClick={() => setComment(blog._id)}
+                  className="p-1 bg-blue-100 rounded-3xl mt-4"
+                >
+                  <p>Open Comment</p>
+                </div>
               </div>
+              {openComment && blogId == blog._id && (
+                <div className="p-2 bg-blue-100 w-[450px]  mt-5 ">
+                  <div className="flex justify-between items-center">
+                    <h1 className="m-1">Comment Box </h1>
+                    <p
+                      className="text-right cursor-pointer"
+                      onClick={() => unsetComment()}
+                    >
+                      X
+                    </p>
+                  </div>
+                  <hr></hr>
+                  <div className="text-left">
+                    {isCommentLoading && <p>Loading...</p>}
+                    {!isCommentLoading &&
+                      commentData.length > 0 &&
+                      commentData.map((comment) => (
+                        <div className="p-1 bg-blue-100 rounded-3xl mt-2">
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={
+                                comment.profilePicture ||
+                                "https://thumbs.dreamstime.com/b/generic-person-gray-photo-placeholder-man-silhouette-white-background-144511705.jpg"
+                              }
+                              className="w-[30px] h-[30px] rounded-full"
+                            ></img>
+                            <p className="text-sm text-gray-400">
+                              {comment.name}
+                            </p>
+                          </div>
+                          <p className="ml-[40px]">{comment.comment}</p>
+                        </div>
+                      ))}
+                  </div>
+
+                  <form
+                    onSubmit={submitComment}
+                    className="flex items-center gap-3"
+                  >
+                    <label
+                      className="block text-gray-700 text-sm font-bold mb-2"
+                      htmlFor="description"
+                    ></label>
+                    <textarea
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      id="description"
+                      placeholder="Enter description"
+                      rows="2"
+                      required
+                      onChange={(e) => setCommentText(e.target.value)}
+                      value={commentText}
+                      name="description"
+                    ></textarea>
+                    <button
+                      type="submit"
+                      className="p-1 bg-blue-400 rounded-sm text-white"
+                    >
+                      Comment
+                    </button>
+                  </form>
+                </div>
+              )}
             </div>
           ))}
 

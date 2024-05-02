@@ -46,7 +46,7 @@ export default function Login() {
           console.log(data);
           if (data.message === "User Not Exist") {
             setError("User Not Exist");
-          
+
             //short delay to remove the error message
             setTimeout(() => {
               setIsLoading(false);
@@ -55,7 +55,7 @@ export default function Login() {
           }
           if (data.message === "Incorrect Password") {
             setError("Incorrect Password");
-           
+
             setTimeout(() => {
               setIsLoading(false);
               setError("");
@@ -70,6 +70,9 @@ export default function Login() {
 
             window.location.href = "/";
           }
+        })
+        .catch((err) => {
+          console.error(err);
         });
     } catch (err) {
       console.error(err.message);
@@ -118,8 +121,6 @@ export default function Login() {
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
           disabled={isLoading}
         >
-         
-
           {isLoading ? "Logging in..." : "Login"}
         </button>
       </form>

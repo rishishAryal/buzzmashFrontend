@@ -12,12 +12,16 @@ const fetchCategory = () => {
           headers: {
             "Content-Type": "application/json",
           },
+          noCORS: true,
         }
       )
         .then((response) => response.json())
         .then((data) => {
           console.log(data.categories);
           setCategory(data.categories);
+        })
+        .catch((error) => {
+          console.error("Error:", error);
         });
     };
     fetchBlogCategory();
