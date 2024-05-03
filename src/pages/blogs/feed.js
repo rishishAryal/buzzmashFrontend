@@ -14,6 +14,8 @@ const feed = () => {
   const [isCommentLoading, setIsCommentLoading] = useState(false);
   const [commentData, setCommentData] = useState([]);
   const [commentText, setCommentText] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -149,6 +151,32 @@ const feed = () => {
       });
   };
 
+  const blogByCategory = (category) => {
+    setSelectedCategory(category);
+
+    setBlogFeed([]);
+    const response = fetch(
+      "https://buzzmash.onrender.com/api/v1/blog/getBlogByCategory",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          category: category,
+        }),
+      }
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        setBlogFeed(data.blogs);
+        console.log(data.blogs);
+      })
+      .catch((err) => {
+        console.log(err.message);
+      });
+  };
+
   useEffect(() => {
     if (blogId) {
       fetchComment();
@@ -195,7 +223,9 @@ const feed = () => {
     setBlogId("");
   };
 
-  useEffect(() => {
+  const fetchAllBlog = () => {
+    setSelectedCategory("All");
+    setBlogFeed([]);
     const response = fetch(
       "https://buzzmash.onrender.com/api/v1/blog/getBlogFeed",
       {
@@ -213,6 +243,10 @@ const feed = () => {
       .catch((err) => {
         console.log(err.message);
       });
+  };
+
+  useEffect(() => {
+    fetchAllBlog();
   }, []);
 
   return (
@@ -307,7 +341,39 @@ const feed = () => {
         <hr></hr>
         <h1 className="text-4xl m-[50px]"> Blog Feed</h1>
         {/* sort in ascending order */}
-        <div></div>
+        <div className="mx-auto w-[500px]">
+          <h1>Browse by Category</h1>
+          <div className="flex items-center overflow-scroll">
+            <p
+              // className="p-1 bg-blue-200 mx-1 cursor-pointer rounded"
+              className={
+                selectedCategory === "All"
+                  ? "bg-blue-400 p-1 mx-1 text-white cursor-pointer rounded"
+                  : "p-1 mx-1 bg-blue-200 cursor-pointer rounded"
+              }
+              onClick={() => {
+                fetchAllBlog();
+              }}
+            >
+              All
+            </p>
+            {category.map((category) => (
+              <p
+                // className="p-1 bg-blue-200 mx-1 cursor-pointer rounded"
+                className={
+                  selectedCategory === category.name
+                    ? "bg-blue-400 p-1 mx-1 text-white cursor-pointer rounded"
+                    : "p-1 mx-1 bg-blue-200 cursor-pointer rounded"
+                }
+                onClick={() => {
+                  blogByCategory(category.name);
+                }}
+              >
+                {category.name}
+              </p>
+            ))}
+          </div>
+        </div>
         {blogFeed
           .sort((a, b) => {
             // Assuming 'createdAt' is a Date object. If it's a string, convert it to Date as:
@@ -332,7 +398,12 @@ const feed = () => {
                   <h1 className="text-2xl text-left font-semibold">
                     {blog.title}
                   </h1>
-                  <p className="p-1 bg-blue-200 rounded">{blog.category}</p>
+                  <p
+                    className="p-1 cursor-pointer bg-blue-200 rounded"
+                    onClick={() => blogByCategory(blog.category)}
+                  >
+                    {blog.category}
+                  </p>
                 </div>
                 <p className="text-justify">
                   {blog.description.length > 150
@@ -352,7 +423,7 @@ const feed = () => {
 
                 <div
                   onClick={() => setComment(blog._id)}
-                  className="p-1 bg-blue-100 rounded-3xl mt-4"
+                  className="p-1 bg-blue-100 rounded-3xl mt-4  cursor-pointer"
                 >
                   <p>Open Comment</p>
                 </div>
