@@ -14,6 +14,10 @@ const profile = () => {
   const [dashboardData, setDashboardData] = useState([]);
   const [showAlert, setShowAlert] = useState(false);
   const [blogID, setBlogID] = useState("");
+  const [showPasswordChange, setShowPaswordChange] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [incorectPassword, setIncorectPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     username: "",
@@ -34,6 +38,36 @@ const profile = () => {
       });
     }
   }, [isLoading]);
+
+  const chnagePassword = (e) => {
+    e.preventDefault();
+    const response = fetch(
+      "https://buzzmash.onrender.com/api/v1/user/changePassword",
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          oldPassword: oldPassword,
+          newPassword: newPassword,
+        }),
+      }
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data);
+        if (data.success) {
+          console.log("Password Changed");
+          restChnagePasswordState()
+        }
+
+        if (data.message === "Incorrect Password") {
+          setIncorectPassword(true);
+        }
+      });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -88,6 +122,12 @@ const profile = () => {
         });
     }
   };
+  const restChnagePasswordState = ()=> {
+    setOldPassword("");
+    setNewPassword("");
+    setIncorectPassword(false);
+    setShowPaswordChange(false);
+  }
 
   const handleDashboard = () => {
     setIsDashboardLoading(true);
@@ -290,6 +330,72 @@ const profile = () => {
                             ></Image>
                           </Link>
                         </div>
+                        <div className="flex mt-3 justify-between items-center">
+                          <p
+                            className=" cursor-pointer font-bold"
+                            onClick={() => setShowPaswordChange(true)}
+                          >
+                            Change Password
+                            
+                          </p>
+                          {showPasswordChange && (
+                            <p className="cursor-pointer  px-2 py-1 text-sm text-white bg-red-500 rounded-[50%]" onClick={ () => restChnagePasswordState()}>X</p>
+                          )}
+                        </div>
+
+                        {showPasswordChange && (
+                          <>
+                            <form onSubmit={chnagePassword}>
+                              <div>
+                                <label
+                                  for="oldPassword"
+                                  class="block text-sm font-medium text-gray-700"
+                                >
+                                  Old Password
+                                </label>
+                                <input
+                                  name="oldPassword"
+                                  required
+                                  type="password"
+                                  value={oldPassword}
+                                  onChange={(e) =>
+                                    setOldPassword(e.target.value)
+                                  }
+                                  className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                ></input>
+                              </div>
+                              <div>
+                                <label
+                                  for="newPassword"
+                                  class="block text-sm font-medium text-gray-700"
+                                >
+                                  New Password
+                                </label>
+                                <input
+                                  name="newPassword"
+                                  type="password"
+                                  required
+                                  value={newPassword}
+                                  onChange={(e) =>
+                                    setNewPassword(e.target.value)
+                                  }
+                                  className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                ></input>
+                              </div>
+                              {incorectPassword && (
+                                <p className="text-red-500">
+                                  Incorrect Password
+                                </p>
+                              )}
+                              <button
+                                className=" p-1 bg-blue-500  mt-2 rounded-md text-white "
+                                type="submit"
+                              >
+                                Change Password
+                              </button>
+                            </form>
+                          </>
+                        )}
                       </div>
                     </>
                   )}

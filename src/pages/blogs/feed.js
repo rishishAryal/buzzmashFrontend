@@ -1,5 +1,6 @@
 import React from "react";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { fetchCategory } from "../../../hooks/fetchCategory";
 const feed = () => {
   const [blogFeed, setBlogFeed] = useState([]);
@@ -410,6 +411,18 @@ const feed = () => {
                     ? blog.description.substring(0, 150) + "...."
                     : blog.description}
                 </p>
+                <div className="flex justify-end" >
+                  <Link
+                    className="text-right text-blue-500"
+                    href={{
+                      pathname: "/blogs/blog",
+                      query: { slug: blog.slug },
+                    }}
+                  >
+                    See more ...
+                  </Link>
+                </div>
+
                 <hr className="mt-4"></hr>
                 <div className="flex justify-between items-center">
                   <p

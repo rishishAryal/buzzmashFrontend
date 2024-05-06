@@ -19,7 +19,7 @@ const update = () => {
     const token = localStorage.getItem("token");
     setToken(token);
     if (!token) {
-      router.push("/login");
+      router.push("/auth/login");
     }
   }, []);
 
