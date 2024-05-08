@@ -7,6 +7,9 @@ const update = () => {
   const [slug, setSlug] = useState("");
   const [blog, setBlog] = useState({});
   const [token, setToken] = useState("");
+  
+  const [file, setFile] = useState(null);
+
   const [formData, setFormData] = useState({
     author: "",
     title: "",
@@ -106,9 +109,74 @@ const update = () => {
 
     //https://buzzmash.onrender.com/api/v1/blog/update
   };
+
+
+  const handleFileChnage = (e) => {
+    if (e.target.files[0]) {
+      // Ensure there's at least one file
+      setFile(e.target.files[0]);
+    }
+  };
+
+
+
+  const handleThumbnail = async (e) => {
+    try {
+      e.preventDefault();
+      const formData = new FormData();
+      formData.append("thumbnail", file);
+      // formData.append("blogId", blogId);
+
+      const response = await fetch(
+          `https://buzzmash.onrender.com/api/v1/blog/addBlogThumbnail/${blogId}`,
+          {
+              method: "POST",
+              headers: {
+                  Authorization: `Bearer ${token}`
+              },
+              body: formData,
+          }
+      )
+      const data = await response.json();
+      if (data.success) {
+          console.log('Thumbnail uploaded:', data);
+          setFormData((prevState) => ({
+            ...prevState,
+            thumbnail: data.thumbnail,
+          }));
+      }ss
+
+    
+  } catch (error) {
+      console.error('Error updating blog thumbnail:', error);
+  }
+  }
+
+
+
   return (
     <div>
       <div className="w-1/2 mx-auto">
+        <h1 className="text-2xl font-bold text-center">Update Blog</h1>
+
+        <img 
+        className="w-[400px] h-[400px] mx-auto"
+        src={formData.thumbnail}
+        ></img>
+        <form className="text-center">
+          <input
+          onChange={handleFileChnage}
+          type="file"
+          ></input>
+          {file && (
+            <button
+            className="bg-blue-500 text-white px-4 py-2 rounded-md"
+            onClick={handleThumbnail}
+            >Upload</button>
+          
+          )}
+         
+        </form>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label
@@ -177,17 +245,16 @@ const update = () => {
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
           </div>
-          <div>
+          <div className="hidden">
             <label
               htmlFor="thumbnail"
               className="block text-sm font-medium text-gray-700"
             >
-              Thumbnail URL
+              Thumbnail Image
             </label>
             <input
               id="thumbnail"
               name="thumbnail"
-              value={formData.thumbnail}
               onChange={handleChange}
               type="text"
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
