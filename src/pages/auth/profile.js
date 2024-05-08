@@ -18,6 +18,8 @@ const profile = () => {
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [incorectPassword, setIncorectPassword] = useState(false);
+  const [file, setFile] = useState(null);
+
   const [formData, setFormData] = useState({
     name: "",
     username: "",
@@ -60,7 +62,7 @@ const profile = () => {
         console.log(data);
         if (data.success) {
           console.log("Password Changed");
-          restChnagePasswordState()
+          restChnagePasswordState();
         }
 
         if (data.message === "Incorrect Password") {
@@ -122,12 +124,12 @@ const profile = () => {
         });
     }
   };
-  const restChnagePasswordState = ()=> {
+  const restChnagePasswordState = () => {
     setOldPassword("");
     setNewPassword("");
     setIncorectPassword(false);
     setShowPaswordChange(false);
-  }
+  };
 
   const handleDashboard = () => {
     setIsDashboardLoading(true);
@@ -248,6 +250,42 @@ const profile = () => {
     setIsEditProfile(true);
   };
 
+  const handleFileChnage = (e) => {
+    if (e.target.files[0]) {
+      // Ensure there's at least one file
+      setFile(e.target.files[0]);
+    }
+  };
+
+
+  const handleProfilePictureChange = (e) => {
+    e.preventDefault();
+    console.log(file);
+    const formData = new FormData();
+    formData.append("profilePicture", file);
+    console.log(formData);
+    const response = fetch(
+      "https://buzzmash.onrender.com/api/v1/user/profilePicture",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+       
+
+        },
+        body: formData,
+      }
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data);
+        if (data.success) {
+          console.log("Profile Picture Updated");
+          window.location.reload();
+        }
+      });
+  }
+
   return (
     <div>
       <div className="w-full flex">
@@ -288,18 +326,39 @@ const profile = () => {
                     <>
                       <div className=" w-[400px] mx-auto p-5  bg-blue-100 rounded ">
                         <div className="flex items-center gap-4">
-                          <img
-                            src={
-                              profileData.profile.profilePicture ||
-                              "https://t3.ftcdn.net/jpg/02/43/12/34/360_F_243123463_zTooub557xEWABDLk0jJklDyLSGl2jrr.jpg"
-                            }
-                            className="w-[75px] h-[75px] object-cover rounded-[50%]"
-                          ></img>
+                          <div>
+                            <img
+                              src={
+                                profileData.profile.profilePicture ||
+                                "https://t3.ftcdn.net/jpg/02/43/12/34/360_F_243123463_zTooub557xEWABDLk0jJklDyLSGl2jrr.jpg"
+                              }
+                              className="w-[75px] h-[75px] object-cover rounded-[50%]"
+                            ></img>
+                          </div>
+
                           <div className="flex flex-col ">
                             <p>{profileData.profile.name}</p>
                             <p>{profileData.profile.username}</p>
                           </div>
                         </div>
+                        <form className="flex gap-2 mt-1" >
+                          <input
+                            type="file"
+                            onChange={handleFileChnage}
+                            className="hidden"
+                            id="file"
+                          ></input>
+                          <p className="text-sm p-[2px] cursor-pointer text-white bg-blue-500 rounded-lg" onClick={() => document.getElementById("file").click()}>Edit Profile</p>
+                          {file && (
+                            <button
+                              className="bg-blue-500 text-white p-1 rounded-md"
+                              type="submit"
+                              onClick={handleProfilePictureChange}
+                            >
+                              Done
+                            </button>
+                          )}
+                        </form>
                         <p>{profileData.profile.email}</p>
                         <h1 className="text-lg">Social Links</h1>
                         <div className="flex gap-1">
@@ -336,10 +395,14 @@ const profile = () => {
                             onClick={() => setShowPaswordChange(true)}
                           >
                             Change Password
-                            
                           </p>
                           {showPasswordChange && (
-                            <p className="cursor-pointer  px-2 py-1 text-sm text-white bg-red-500 rounded-[50%]" onClick={ () => restChnagePasswordState()}>X</p>
+                            <p
+                              className="cursor-pointer  px-2 py-1 text-sm text-white bg-red-500 rounded-[50%]"
+                              onClick={() => restChnagePasswordState()}
+                            >
+                              X
+                            </p>
                           )}
                         </div>
 
@@ -544,7 +607,7 @@ const profile = () => {
                     />
                   </div>
 
-                  <div>
+                  <div className="hidden">
                     <label
                       for="profilePicture"
                       class="block text-sm font-medium text-gray-700"
